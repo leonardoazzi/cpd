@@ -44,18 +44,6 @@ class Hash_Table:
 
             self.hash_table[i] = Element("Empty")
 
-    # =================================================================================================
-    def Used_Entries(self):
-
-        j = 0
-
-        for i in range(self.table_size):
-            if self.hash_table[i] != Element("Empty"):
-                
-                j += 1
-
-        return j
-
     # Hash Function =================================================================================
     def Hash_Function(self, key, hash_size):
 
@@ -67,7 +55,7 @@ class Hash_Table:
         
         return hashsum % hash_size
 
-    def Auxiliary_Hash_Funcuntion(self):
+    def Auxiliary_Hash_Function(self):
 
         new_size = 2 * self.table_size + 1
         extended_hash_table  = [None] * new_size
@@ -88,7 +76,7 @@ class Hash_Table:
                 auxiliary_index.next = bucket
                 bucket = auxiliary_index
 
-        print(new_size)
+        return new_size
 
     # BUSCA ========================================================================================
     def Search_Item(self, key):
@@ -117,14 +105,14 @@ class Hash_Table:
             return -1
 
     # INSERÇÃO ====================================================================================
-    def Insert_Item(self, key, empty, used):
+    def Insert_Item(self, key, used, size):
 
         index = self.Hash_Function(key, self.table_size)
 
         if(self.hash_table[index].key == "Empty"):
         
             self.hash_table[index].key = key
-            empty += 1
+            used += 1
             
         else:
         
@@ -137,15 +125,13 @@ class Hash_Table:
             
             pointer.next = index
 
-            used += 1
-        
         if(self.number_of_elements == int(0.5 * self.table_size)):
         
-            self.Auxiliary_Hash_Funcuntion()
+            size = self.Auxiliary_Hash_Function()
         
         self.number_of_elements += 1
 
-        return empty, used
+        return used, size
 
 # ARQUIVO =======================================================================================
 def Write_Output_File(table_size): 
@@ -154,16 +140,19 @@ def Write_Output_File(table_size):
     HashTable = Hash_Table(table_size)
     mean = 0
     total_searches = 0
-    max = 0
+    
+    max_searches = 0
+    min_searches = table_size
+
+    size_table = 0
 
     with open(os.path.join(sys.path[0], "nomes_10000.txt"), "r") as file:
         
-        empty_entries = 0
         used_entries = 0
 
         for line in file:
 
-            empty_entries, used_entries = HashTable.Insert_Item(line.split('\n')[0], empty_entries, used_entries)
+            used_entries, size_table = HashTable.Insert_Item(line.split('\n')[0], used_entries, size_table)
 
     Output_File = open("experimento" + str(table_size) + ".txt", "a", encoding = "utf-8")
 
@@ -173,15 +162,15 @@ def Write_Output_File(table_size):
         + "\n" +
         "NÚMERO DE ENTRADAS DA TABELA USADAS " + str(used_entries)
         + "\n" +
-        "NÚMERO DE ENTRADAS DA TABELA VAZIAS " + str(empty_entries)
+        "NÚMERO DE ENTRADAS DA TABELA VAZIAS " + str(HashTable.table_size - used_entries)
         + "\n" +
         "TAXA DE OCUPAÇÃO " + str(used_entries / HashTable.table_size)
         + "\n" +
-        "MÍNIMO TAMANHO DE LISTA #MIN1"
+        "MÍNIMO TAMANHO DE LISTA " + str(HashTable.table_size)
         + "\n" +
-        "MÁXIMO TAMANHO DE LISTA #MAX1"
+        "MÁXIMO TAMANHO DE LISTA " + str(size_table)
         + "\n" +
-        "MÉDIO TAMANHO DE LISTA #MED1"
+        "MÉDIO TAMANHO DE LISTA " + str((HashTable.table_size + size_table) / 2)
         + "\n\n" +
         "PARTE 2: ESTATÍSTICAS DAS CONSULTAS \n"
 
@@ -199,27 +188,28 @@ def Write_Output_File(table_size):
 
             else:
 
+                if searches > max_searches:
+
+                    max_searches = searches
+
+                if searches < min_searches:
+
+                    min_searches = searches
+                
                 Output_File.write(line.split('\n')[0] + " HIT " + str(searches) + "\n")
 
             mean += searches
             total_searches += 1
 
-            if(max < searches):
-
-                max = searches
-
-    Output_File.write("MÉDIA " + str(int(mean/total_searches)) + "\n")
-    Output_File.write("MÁXIMO " + str(max) + "\n")
-
     Output_File.write(
         
-        "MÍNIMO NÚMERO DE TESTES POR NOME ENCONTRADO " + str(0)
+        "MÍNIMO NÚMERO DE TESTES POR NOME ENCONTRADO " + str(min_searches)
         + "\n" +
-        "MÁXIMO NÚMERO DE TESTES POR NOME ENCONTRADO " + str(0)
+        "MÁXIMO NÚMERO DE TESTES POR NOME ENCONTRADO " + str(max_searches)
         + "\n" +
-        "MÉDIA NÚMERO DE TESTES NOME ENCONTRADO " + str(0)
+        "MÉDIA NÚMERO DE TESTES POR NOME ENCONTRADO " + str(mean / total_searches)
         + "\n" +
-        "MÉDIA DAS CONSULTAS " + str(0)
+        "MÉDIA DAS CONSULTAS " + str(searches/total_searches)
 
         )
 
